@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "webpage summerizer"
+version = "0.1.0"
+description = ""
+authors = ["Saqoosha <a@saqoo.sh>"]
+readme = "README.md"
+packages = [{include = "webpage_summerizer"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+slack-bolt = "^1.18.0"
+slack-sdk = "^3.21.3"
+html2text = "^2020.1.16"
+cachetools = "^5.3.1"
+openai = "^1.1.1"
+aiohttp = "^3.8.6"
+requests = "^2.31.0"
+extractcontent3 = "^0.0.2"
+
+[tool.black]
+line-length = 119
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
