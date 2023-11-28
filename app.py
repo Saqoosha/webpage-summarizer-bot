@@ -170,8 +170,7 @@ async def summerize_text(event, text, slackClient, logger):
 
 
 async def process_link(event, url, slackClient, logger):
-    logger.info(f"Processing link: {url}")
-
+    url = url.replace("&amp;", "&")
     if url.startswith("https://www.google.com/url?"):
         parsed_url = urllib.parse.urlparse(url)
 
@@ -184,6 +183,8 @@ async def process_link(event, url, slackClient, logger):
         if redirected_url:
             # Return the first 'url' value if it exists
             url = redirected_url[0]
+
+    logger.info(f"Processing link: {url}")
 
     response = requests.get(url, timeout=60)
     response.raise_for_status()
