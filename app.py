@@ -186,7 +186,10 @@ async def process_link(event, url, slackClient, logger):
 
     logger.info(f"Processing link: {url}")
 
-    response = requests.get(url, timeout=60)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers, timeout=60)
     response.raise_for_status()
     # logger.info(response.text)
     extractor.analyse(response.text)
