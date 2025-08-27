@@ -1,0 +1,34 @@
+{
+  "name": "slack-webpage-summarizer",
+  "version": "2.0.0",
+  "description": "Slack bot that summarizes web pages using Gemini AI",
+  "module": "src/worker.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "dev:remote": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "tail": "wrangler tail",
+    "kv:create": "wrangler kv namespace create DEDUP",
+    "kv:create:preview": "wrangler kv namespace create DEDUP --preview",
+    "secret:add": "echo 'Run: bun wrangler secret put SLACK_SIGNING_SECRET && bun wrangler secret put SLACK_BOT_TOKEN && bun wrangler secret put GEMINI_API_KEY'",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write 'src/**/*.{ts,js,json}'",
+    "test:local": "bun run src/test-local.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250826.0",
+    "@types/bun": "latest",
+    "typescript": "^5",
+    "wrangler": "^4.33.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

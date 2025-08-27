@@ -1,0 +1,50 @@
+name = "slack-webpage-summarizer"
+main = "src/worker.ts"
+compatibility_date = "2025-08-26"
+account_id = "c21a10f70a8036d2ad10687ab83bfb4b"
+
+# Worker configuration
+[placement]
+mode = "smart"
+
+# Enable observability for logging
+[observability]
+enabled = true
+
+# Environment variables (non-secrets)
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+# Optional: Set GEMINI_BASE_URL if using Cloudflare AI Gateway
+# GEMINI_BASE_URL = "https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_name>/google-ai-studio"
+
+# KV namespace for event deduplication
+# You need to create this first:
+# bun wrangler kv namespace create DEDUP
+# bun wrangler kv namespace create DEDUP --preview
+[[kv_namespaces]]
+binding = "DEDUP"
+id = "9955843706884d4caca61f1ade2f2b65"
+preview_id = "f5322194ab2942ddb022b0505cb54164"
+
+# Local development configuration
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Secrets (set via command line)
+# bun wrangler secret put SLACK_SIGNING_SECRET
+# bun wrangler secret put SLACK_BOT_TOKEN
+# bun wrangler secret put GEMINI_API_KEY
+
+# Optional: Custom domain configuration
+# [routes]
+# patterns = ["slack-bot.yourdomain.com/*"]
+
+# Optional: Environment-specific configurations
+[env.production]
+name = "slack-webpage-summarizer-prod"
+vars = { GEMINI_MODEL = "gemini-2.5-pro" }
+
+[env.staging]
+name = "slack-webpage-summarizer-staging"
+vars = { GEMINI_MODEL = "gemini-2.5-flash" }
