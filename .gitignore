@@ -7,7 +7,7 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
@@ -175,3 +175,27 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Cloudflare Workers
+.wrangler/
+.dev.vars
+wrangler.toml.bak
+
+# Bun
+bun.lockb
+
+# Local test files
+src/test-local.ts
+*.local.ts
+
+# Editor
+.idea/
+.cursor/
+
+# Python (keeping existing Python project files)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+poetry.lock
+.lsmcp
