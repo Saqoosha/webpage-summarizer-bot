@@ -51,12 +51,17 @@ bun run typecheck
 4. Run `bun run dev` for local testing
 
 ### Key Implementation Details
-- Verifies Slack signatures using Web Crypto API
+- Verifies Slack signatures using Web Crypto API (HMAC-SHA256)
 - Responds to events within 3 seconds using `ctx.waitUntil()`
 - Rate limits Slack API calls (1 message/second per channel)
-- Handles URL verification challenges
-- Supports up to 20 URLs per message (Gemini limit)
-- Fallback to simple summarization if structured response fails
+- Handles URL verification challenges automatically
+- Supports up to 20 URLs per message (Gemini URLContext limit)
+- Event deduplication using KV storage with 1-hour TTL
+- Smart Japanese text formatting for Slack markdown:
+  - Automatically adds spaces between Japanese text and markdown
+  - Handles punctuation (、。！？) with proper spacing
+  - Removes spaces inside markdown markers (fixes `* text *` → `*text*`)
+  - Converts double asterisks to single for Slack compatibility
 
 ## Python Version (app.py)
 
@@ -107,5 +112,17 @@ poetry run black .
 
 - **TypeScript**: Deploy to Cloudflare Workers for serverless, global edge deployment
 - **Python**: Requires always-on server or container deployment
-- Both versions handle Japanese translation automatically
+- Both versions handle Japanese summarization automatically
 - TypeScript version is recommended for production due to simpler infrastructure
+
+## Common Issues & Solutions
+
+### TypeScript Version
+- **Unicode/Emoji corruption**: Fixed by removing emojis from templates and avoiding JSON.stringify on response text
+- **Markdown spacing in Japanese**: Gemini is instructed to add proper spacing, and code automatically fixes common issues
+- **Punctuation formatting**: Code ensures spaces are added between markdown and Japanese punctuation (、。！？)
+- **Event duplication**: Handled with KV storage and event_id tracking
+
+### Python Version
+- **Google redirect URLs**: Automatically handled in the code
+- **Slack OG previews**: Filtered out to avoid duplicate processing

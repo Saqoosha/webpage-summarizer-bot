@@ -8,11 +8,12 @@ A Slack bot that automatically summarizes and translates web pages shared in Sla
 ## Features
 
 - 🔍 Automatically detects URLs in Slack messages
-- 📝 Summarizes web page content
-- 🌐 Translates non-Japanese content to Japanese
-- 💬 Posts summaries as thread replies
+- 📝 Summarizes web page content in Japanese
+- 💬 Posts summaries as thread replies with proper Slack formatting
 - ⚡ Fast, serverless deployment (TypeScript version)
 - 🔒 Secure with Slack signature verification
+- 🎯 Smart markdown formatting for Japanese text
+- 🔄 Event deduplication to prevent duplicate processing
 
 ## TypeScript Version (Cloudflare Workers + Gemini)
 
@@ -89,10 +90,11 @@ bun run deploy:production
 
 ### Key Files
 
-- `src/worker.ts` - Main worker entry point
-- `src/gemini.ts` - Gemini API integration with URLContext
-- `src/slack.ts` - Slack signature verification and API
-- `src/extract.ts` - URL extraction from Slack messages
+- `src/worker.ts` - Main worker entry point and event processing
+- `src/gemini.ts` - Gemini API integration with URLContext and Slack formatting
+- `src/slack.ts` - Slack signature verification and API client
+- `src/extract.ts` - URL extraction from Slack messages and blocks
+- `src/types.ts` - TypeScript type definitions
 - `wrangler.toml` - Cloudflare Workers configuration
 
 ## Python Version (Original)
@@ -145,11 +147,20 @@ bun run deploy:production
 ## Migration Notes
 
 The TypeScript version offers several advantages:
-- No need for manual web content extraction (Gemini handles it)
-- Serverless deployment with automatic scaling
+- No need for manual web content extraction (Gemini URLContext handles it)
+- Serverless deployment with automatic scaling on Cloudflare's edge network
 - Lower latency with edge computing
 - Simpler codebase without ExtractContent3 dependency
 - Built-in URL fetching and grounding with Gemini
+- Better handling of Japanese text with Slack markdown formatting
+- Automatic event deduplication using Cloudflare KV storage
+- Rate limiting to respect Slack API limits
+
+### Known Issues & Solutions
+
+- **Unicode/Emoji issues:** Resolved by removing emojis from templates and fixing JSON stringification
+- **Markdown spacing:** Automatically adds proper spacing between Japanese text and markdown blocks
+- **Punctuation formatting:** Handles Japanese punctuation (、。！？) with proper spacing around markdown
 
 ## License
 
