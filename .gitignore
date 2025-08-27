@@ -192,10 +192,5 @@ src/test-local.ts
 .idea/
 .cursor/
 
-# Python (keeping existing Python project files)
-__pycache__/
-*.py[cod]
-*$py.class
-.Python
-poetry.lock
-.lsmcp
+# LSP/MCP
+.lsmcp/
