@@ -1,21 +1,19 @@
 # Webpage Summarizer Slack Bot
 
-A Slack bot that automatically summarizes and translates web pages shared in Slack channels. Now available in two implementations:
-
-1. **Python Version** (Original) - Using OpenAI GPT-4 with Socket Mode
-2. **TypeScript Version** (New) - Using Google Gemini with Cloudflare Workers
+A Slack bot that automatically summarizes web pages shared in Slack channels into Japanese. Built with TypeScript and deployed on Cloudflare Workers using Google Gemini AI.
 
 ## Features
 
 - 🔍 Automatically detects URLs in Slack messages
 - 📝 Summarizes web page content in Japanese
 - 💬 Posts summaries as thread replies with proper Slack formatting
-- ⚡ Fast, serverless deployment (TypeScript version)
-- 🔒 Secure with Slack signature verification
+- ⚡ Fast, serverless deployment on Cloudflare's edge network
+- 🔒 Secure with Slack signature verification (HMAC-SHA256)
 - 🎯 Smart markdown formatting for Japanese text
 - 🔄 Event deduplication to prevent duplicate processing
+- 🌐 Built-in web content extraction with Gemini URLContext
 
-## TypeScript Version (Cloudflare Workers + Gemini)
+## Setup
 
 ### Prerequisites
 
@@ -88,7 +86,7 @@ bun run deploy:production
 - **Package Manager:** Bun
 - **Slack Integration:** Events API (Webhooks)
 
-### Key Files
+## Key Files
 
 - `src/worker.ts` - Main worker entry point and event processing
 - `src/gemini.ts` - Gemini API integration with URLContext and Slack formatting
@@ -97,66 +95,22 @@ bun run deploy:production
 - `src/types.ts` - TypeScript type definitions
 - `wrangler.toml` - Cloudflare Workers configuration
 
-## Python Version (Original)
+## Why TypeScript/Cloudflare Workers?
 
-### Prerequisites
+This project was rewritten from Python to TypeScript for several advantages:
 
-- Python 3.10+
-- Poetry
-- OpenAI API key
-- Slack App with Socket Mode enabled
-
-### Setup
-
-1. **Install dependencies:**
-   ```bash
-   poetry install
-   ```
-
-2. **Set environment variables:**
-   ```bash
-   export SLACK_BOT_TOKEN="xoxb-..."
-   export SLACK_APP_TOKEN="xapp-..."
-   export OPENAI_API_KEY="sk-..."
-   ```
-
-3. **Run the bot:**
-   ```bash
-   poetry run python app.py
-   ```
-
-### Architecture
-
-- **Runtime:** Local Python process
-- **Language:** Python 3.10+
-- **AI Model:** OpenAI GPT-4
-- **Package Manager:** Poetry
-- **Slack Integration:** Socket Mode (WebSocket)
-
-## Comparison
-
-| Feature | Python Version | TypeScript Version |
-|---------|---------------|-------------------|
-| **Hosting** | Self-hosted | Cloudflare Workers (Serverless) |
-| **AI Model** | OpenAI GPT-4 | Google Gemini |
-| **Web Extraction** | ExtractContent3 | Gemini URLContext (built-in) |
+| Aspect | Previous (Python) | Current (TypeScript) |
+|---------|------------------|---------------------|
+| **Hosting** | Self-hosted server required | Serverless (Cloudflare Workers) |
+| **AI Model** | OpenAI GPT-4 | Google Gemini with URLContext |
+| **Web Extraction** | ExtractContent3 library | Built-in Gemini URLContext |
 | **Slack Connection** | Socket Mode (WebSocket) | Events API (Webhooks) |
-| **Scaling** | Manual | Automatic (Edge) |
-| **Cost** | OpenAI API + Hosting | Gemini API + Workers (Free tier available) |
+| **Scaling** | Manual | Automatic edge scaling |
+| **Cost** | OpenAI API + Server costs | Gemini API + Workers free tier |
+| **Performance** | Server-dependent | Edge network (low latency) |
+| **Maintenance** | Server management needed | Zero-ops deployment |
 
-## Migration Notes
-
-The TypeScript version offers several advantages:
-- No need for manual web content extraction (Gemini URLContext handles it)
-- Serverless deployment with automatic scaling on Cloudflare's edge network
-- Lower latency with edge computing
-- Simpler codebase without ExtractContent3 dependency
-- Built-in URL fetching and grounding with Gemini
-- Better handling of Japanese text with Slack markdown formatting
-- Automatic event deduplication using Cloudflare KV storage
-- Rate limiting to respect Slack API limits
-
-### Known Issues & Solutions
+## Known Issues & Solutions
 
 - **Unicode/Emoji issues:** Resolved by removing emojis from templates and fixing JSON stringification
 - **Markdown spacing:** Automatically adds proper spacing between Japanese text and markdown blocks
