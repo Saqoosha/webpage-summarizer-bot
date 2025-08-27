@@ -186,8 +186,12 @@ async function processSlackEvent(
         model: env.GEMINI_MODEL || "gemini-2.5-flash"
       });
       
-      // Log the summary for testing
-      console.log("Gemini Summary Result:", JSON.stringify(summaryResult, null, 2));
+      // Log the summary for testing (without JSON.stringify to preserve emojis)
+      console.log("Gemini Summary Result:", {
+        summary: summaryResult.summary,
+        language: summaryResult.language,
+        metadata: summaryResult.metadata
+      });
       
       // Determine thread timestamp
       const threadTs = event.thread_ts || event.ts;

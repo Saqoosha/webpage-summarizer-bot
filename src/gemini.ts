@@ -32,7 +32,7 @@ ${urls.join('\n')}
 【出力形式】
 Slackに投稿するマークダウン形式で出力してください：
 
-📝 *要約*
+*要約*
 • 重要ポイント1をここに書く
 • 重要ポイント2をここに書く  
 • 重要ポイント3をここに書く
@@ -54,8 +54,15 @@ Slackに投稿するマークダウン形式で出力してください：
 - [リンク](URL) → この形式は使わない、URLは直接記載
 
 【重要な注意点】
-- 絵文字の直後に*を置かない（例: NG: *📝要約*、OK: 📝 *要約*）
-- 日本語文字の直後/直前のマークダウンにはスペースを入れる
+- 日本語（ひらがな、カタカナ、漢字）とマークダウンの間には必ず半角スペースを入れる
+- これは全てのマークダウン記法に適用される：
+  * 太字: これは *重要* です（正しい）、これは*重要*です（間違い）
+  * コード: 設定で \`tsconfig.json\` を編集（正しい）、設定で\`tsconfig.json\`を編集（間違い）
+  * 斜体: ここは _注意_ が必要（正しい）、ここは_注意_が必要（間違い）
+  * 取り消し線: この機能は ~廃止~ されました（正しい）、この機能は~廃止~されました（間違い）
+- 句読点（、。）の後にマークダウンが来る場合も半角スペースを入れる
+  例: 移行する際、 \`tsconfig.json\` のパス（正しい）
+- マークダウンの内側にスペースを入れない（*重要* は正しい、* 重要 * は間違い）
 
 必ず日本語で、上記のSlack仕様に従って出力してください。`;
 
@@ -66,7 +73,7 @@ Slackに投稿するマークダウン形式で出力してください：
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({
           contents: [{ 
             parts: [{ text: prompt }] 
@@ -128,27 +135,23 @@ Slackに投稿するマークダウン形式で出力してください：
     // Clean up the response text for Slack
     let summary = text;
     
-    // Fix emoji + markdown issue (convert "*📝 要約*" to "📝 *要約*")
-    summary = summary.replace(/\*📝\s*要約\*/g, '📝 *要約*');
-    
-    // Convert double asterisks to single for Slack
+    // Convert double asterisks to single for Slack (if Gemini uses them)
     summary = summary.replace(/\*\*([^*]+)\*\*/g, '*$1*');
     
     // Remove any markdown code block markers if present
     summary = summary.replace(/```[a-z]*\n?/g, '').replace(/```/g, '');
     
-    // Ensure proper spacing for non-ASCII characters with markdown
-    summary = summary.replace(/([^\\x00-\\x7F])(\\*[^*]+\\*)/g, '$1 $2');
-    summary = summary.replace(/(\\*[^*]+\\*)([^\\x00-\\x7F])/g, '$1 $2');
-    summary = summary.replace(/([^\\x00-\\x7F])(_[^_]+_)/g, '$1 $2');
-    summary = summary.replace(/(_[^_]+_)([^\\x00-\\x7F])/g, '$1 $2');
-    summary = summary.replace(/([^\\x00-\\x7F])(`[^`]+`)/g, '$1 $2');
-    summary = summary.replace(/(`[^`]+`)([^\\x00-\\x7F])/g, '$1 $2');
+    // Just in case Gemini doesn't follow our instructions perfectly,
+    // fix any spaces that ended up inside markdown markers
+    summary = summary.replace(/\*\s+([^*]+?)\s+\*/g, '*$1*');
+    summary = summary.replace(/_\s+([^_]+?)\s+_/g, '_$1_');
+    summary = summary.replace(/~\s+([^~]+?)\s+~/g, '~$1~');
     
-    // If the response doesn't start with the expected format, add it
-    if (!summary.includes('📝')) {
-      summary = `📝 *要約*\n${summary}`;
-    }
+    // Add space after Japanese punctuation (、。) when followed by markdown
+    summary = summary.replace(/([、。])(`[^`]+`)/g, '$1 $2');
+    summary = summary.replace(/([、。])(\*[^*]+\*)/g, '$1 $2');
+    summary = summary.replace(/([、。])(_[^_]+_)/g, '$1 $2');
+    summary = summary.replace(/([、。])(~[^~]+~)/g, '$1 $2');
     
     return {
       summary: summary.trim(),
