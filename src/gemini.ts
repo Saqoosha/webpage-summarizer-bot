@@ -20,11 +20,11 @@ export async function summarizeUrlsWithGemini(
   options: GeminiOptions
 ): Promise<SummaryResult> {
   const { apiKey, model = "gemini-2.5-flash" } = options;
-  
+
   if (!urls || urls.length === 0) {
     throw new Error("No URLs provided for summarization");
   }
-  
+
   // Include URLs directly in the prompt
   const prompt = `以下のWebページを読んで、日本語で要約してください:
 ${urls.join('\n')}
@@ -34,7 +34,7 @@ Slackに投稿するマークダウン形式で出力してください：
 
 *要約*
 • 重要ポイント1をここに書く
-• 重要ポイント2をここに書く  
+• 重要ポイント2をここに書く
 • 重要ポイント3をここに書く
 （3〜6個の箇条書き）
 
@@ -55,13 +55,15 @@ Slackに投稿するマークダウン形式で出力してください：
 
 【重要な注意点】
 - 日本語（ひらがな、カタカナ、漢字）とマークダウンの間には必ず半角スペースを入れる
-- これは全てのマークダウン記法に適用される：
+- マークダウンの前後両方にスペースが必要：
   * 太字: これは *重要* です（正しい）、これは*重要*です（間違い）
   * コード: 設定で \`tsconfig.json\` を編集（正しい）、設定で\`tsconfig.json\`を編集（間違い）
   * 斜体: ここは _注意_ が必要（正しい）、ここは_注意_が必要（間違い）
   * 取り消し線: この機能は ~廃止~ されました（正しい）、この機能は~廃止~されました（間違い）
-- 句読点（、。）の後にマークダウンが来る場合も半角スペースを入れる
-  例: 移行する際、 \`tsconfig.json\` のパス（正しい）
+- 句読点（、。）の扱い：
+  * マークダウンの前に句読点がある場合: 移行する際、 \`tsconfig.json\` のパス（正しい）
+  * マークダウンの後に句読点がある場合: *重要* 、2位に（正しい）、*重要*、2位に（間違い）
+  * つまり: 句読点とマークダウンの間には必ずスペースを入れる
 - マークダウンの内側にスペースを入れない（*重要* は正しい、* 重要 * は間違い）
 
 必ず日本語で、上記のSlack仕様に従って出力してください。`;
@@ -75,8 +77,8 @@ Slackに投稿するマークダウン形式で出力してください：
         method: "POST",
         headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({
-          contents: [{ 
-            parts: [{ text: prompt }] 
+          contents: [{
+            parts: [{ text: prompt }]
           }],
           tools: [{ url_context: {} }],  // Enable URLContext tool
           generationConfig: {
@@ -89,40 +91,40 @@ Slackに投稿するマークダウン形式で出力してください：
         })
       }
     );
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`Gemini API error: ${response.status} - ${error}`);
     }
-    
+
     const data = await response.json() as any;
-    
+
     // Extract the text from the response
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
+
     // Log raw response for debugging
     console.log("=== RAW GEMINI RESPONSE ===");
     console.log(text);
     console.log("=== END RAW RESPONSE ===");
-    
+
     // Check if response is in English (error message)
-    if (text.toLowerCase().includes("could not be fetched") || 
+    if (text.toLowerCase().includes("could not be fetched") ||
         text.toLowerCase().includes("unable to access") ||
         text.toLowerCase().includes("apologize") ||
         text.toLowerCase().includes("cannot summarize")) {
       throw new Error("URLContext could not fetch the provided URL");
     }
-    
+
     // Check for URLContext metadata and errors
     const urlMetadata = data.candidates?.[0]?.urlContextMetadata || data.candidates?.[0]?.url_context_metadata;
-    
+
     if (urlMetadata) {
       console.log("URLContext Metadata:", JSON.stringify(urlMetadata, null, 2));
-      
+
       // Check if any URLs failed to fetch
       if (urlMetadata.failedUrls && urlMetadata.failedUrls.length > 0) {
         console.warn("Failed to fetch URLs:", urlMetadata.failedUrls);
-        
+
         // If all URLs failed, throw a specific error
         if (urlMetadata.failedUrls.length === urls.length) {
           throw new Error("URLContext could not fetch any of the provided URLs. The pages may be protected or inaccessible.");
@@ -131,28 +133,28 @@ Slackに投稿するマークダウン形式で出力してください：
     } else {
       console.log("WARNING: No URLContext metadata found in response!");
     }
-    
+
     // Clean up the response text for Slack
     let summary = text;
-    
+
     // Convert double asterisks to single for Slack (if Gemini uses them)
     summary = summary.replace(/\*\*([^*]+)\*\*/g, '*$1*');
-    
+
     // Remove any markdown code block markers if present
     summary = summary.replace(/```[a-z]*\n?/g, '').replace(/```/g, '');
+
+    // Add space after Japanese punctuation when followed by markdown
+    summary = summary.replace(/([、。！？」』】）])(`[^`]+`)/g, '$1 $2');
+    summary = summary.replace(/([、。！？」』】）])(\*[^*]+\*)/g, '$1 $2');
+    summary = summary.replace(/([、。！？」』】）])(_[^_]+_)/g, '$1 $2');
+    summary = summary.replace(/([、。！？」』】）])(~[^~]+~)/g, '$1 $2');
     
-    // Just in case Gemini doesn't follow our instructions perfectly,
-    // fix any spaces that ended up inside markdown markers
-    summary = summary.replace(/\*\s+([^*]+?)\s+\*/g, '*$1*');
-    summary = summary.replace(/_\s+([^_]+?)\s+_/g, '_$1_');
-    summary = summary.replace(/~\s+([^~]+?)\s+~/g, '~$1~');
-    
-    // Add space after Japanese punctuation (、。) when followed by markdown
-    summary = summary.replace(/([、。])(`[^`]+`)/g, '$1 $2');
-    summary = summary.replace(/([、。])(\*[^*]+\*)/g, '$1 $2');
-    summary = summary.replace(/([、。])(_[^_]+_)/g, '$1 $2');
-    summary = summary.replace(/([、。])(~[^~]+~)/g, '$1 $2');
-    
+    // Add space before Japanese punctuation when preceded by markdown
+    summary = summary.replace(/(`[^`]+`)([、。！？「『【（])/g, '$1 $2');
+    summary = summary.replace(/(\*[^*]+\*)([、。！？「『【（])/g, '$1 $2');
+    summary = summary.replace(/(_[^_]+_)([、。！？「『【（])/g, '$1 $2');
+    summary = summary.replace(/(~[^~]+~)([、。！？「『【（])/g, '$1 $2');
+
     return {
       summary: summary.trim(),
       translatedBody: undefined,
